@@ -57,9 +57,9 @@ public class IngredientServiceImpl implements IngredientService {
 
         //enhance command object with recipe id
         IngredientCommand ingredientCommand = ingredientCommandOptional.get();
-        ingredientCommand.setRecipeId(recipe.getId());
+        ingredientCommand.setRecipeId(recipeId);
 
-        return ingredientCommandOptional.get();
+        return ingredientCommand;
     }
 
     @Override
