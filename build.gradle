@@ -38,8 +38,8 @@ dependencies {
     implementation('cz.jirutka.spring:embedmongo-spring:1.3.1')
     implementation('org.webjars:bootstrap:3.3.7-1')
     implementation('org.projectlombok:lombok')
-    testCompileOnly('org.springframework.boot:spring-boot-starter-test')
-    testCompileOnly('io.projectreactor:reactor-test')
+    testCompile('org.springframework.boot:spring-boot-starter-test')
+    testCompile('io.projectreactor:reactor-test')
 }
 
 //export test coverage
