@@ -5,6 +5,7 @@ import guru.springframework.converters.IngredientCommandToIngredient;
 import guru.springframework.converters.IngredientToIngredientCommand;
 import guru.springframework.domain.Ingredient;
 import guru.springframework.domain.Recipe;
+import guru.springframework.repositories.RecipeRepository;
 import guru.springframework.repositories.reactive.RecipeReactiveRepository;
 import guru.springframework.repositories.reactive.UnitOfMeasureReactiveRepository;
 import lombok.extern.slf4j.Slf4j;
@@ -12,7 +13,6 @@ import org.springframework.stereotype.Service;
 import reactor.core.publisher.Mono;
 
 import java.util.Optional;
-import java.util.UUID;
 
 /**
  * Created by jt on 6/28/17.
@@ -25,14 +25,16 @@ public class IngredientServiceImpl implements IngredientService {
     private final IngredientCommandToIngredient ingredientCommandToIngredient;
     private final RecipeReactiveRepository recipeReactiveRepository;
     private final UnitOfMeasureReactiveRepository unitOfMeasureReactiveRepository;
+    private final RecipeRepository recipeRepository;
 
     public IngredientServiceImpl(IngredientToIngredientCommand ingredientToIngredientCommand,
                                  IngredientCommandToIngredient ingredientCommandToIngredient,
-                                 RecipeReactiveRepository recipeReactiveRepository, UnitOfMeasureReactiveRepository unitOfMeasureReactiveRepository) {
+                                 RecipeReactiveRepository recipeReactiveRepository, UnitOfMeasureReactiveRepository unitOfMeasureReactiveRepository, RecipeRepository recipeRepository) {
         this.ingredientToIngredientCommand = ingredientToIngredientCommand;
         this.ingredientCommandToIngredient = ingredientCommandToIngredient;
         this.recipeReactiveRepository = recipeReactiveRepository;
         this.unitOfMeasureReactiveRepository = unitOfMeasureReactiveRepository;
+        this.recipeRepository = recipeRepository;
     }
 
     @Override
@@ -51,7 +53,7 @@ public class IngredientServiceImpl implements IngredientService {
 
     @Override
     public Mono<IngredientCommand> saveIngredientCommand(IngredientCommand command) {
-        Optional<Recipe> recipeOptional = recipeReactiveRepository.findById(command.getRecipeId()).blockOptional();
+        Optional<Recipe> recipeOptional = recipeRepository.findById(command.getRecipeId());
 
         if (!recipeOptional.isPresent()) {
 
@@ -72,13 +74,15 @@ public class IngredientServiceImpl implements IngredientService {
                 ingredientFound.setDescription(command.getDescription());
                 ingredientFound.setAmount(command.getAmount());
                 ingredientFound.setUom(unitOfMeasureReactiveRepository
-                    .findById(command.getUom().getId()).blockOptional()
-                    .orElseThrow(() -> new RuntimeException("UOM NOT FOUND"))); //todo address this
+                    .findById(command.getUom().getId()).block());
+
+                //        .orElseThrow(() -> new RuntimeException("UOM NOT FOUND"))); //todo address this
+                if (ingredientFound.getUom() == null) {
+                    new RuntimeException("UOM NOT FOUND");
+                }
             } else {
                 //add new Ingredient
-                command.setId(UUID.randomUUID().toString());
                 Ingredient ingredient = ingredientCommandToIngredient.convert(command);
-                //  ingredient.setRecipe(recipe);
                 recipe.addIngredient(ingredient);
             }
 
@@ -100,10 +104,11 @@ public class IngredientServiceImpl implements IngredientService {
 
             //todo check for fail
 
-            IngredientCommand ingredientCommand = ingredientToIngredientCommand.convert(savedIngredientOptional.get());
-            ingredientCommand.setRecipeId(recipe.getId());
+            //enhance with id value
+            IngredientCommand ingredientCommandSaved = ingredientToIngredientCommand.convert(savedIngredientOptional.get());
+            ingredientCommandSaved.setRecipeId(recipe.getId());
 
-            return Mono.just(ingredientCommand);
+            return Mono.just(ingredientCommandSaved);
         }
 
     }
