@@ -28,7 +28,6 @@ public class ImageServiceImpl implements ImageService {
     @Override
     @Transactional
     public Mono<Void> saveImageFile(String recipeId, MultipartFile file) {
-
         try {
             Recipe recipe = recipeReactiveRepository.findById(recipeId).block();
 
